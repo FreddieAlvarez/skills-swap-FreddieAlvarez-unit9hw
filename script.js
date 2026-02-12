@@ -6,8 +6,6 @@ function filterSkillsByCategory(skills, category) {
   return skills.filter(skill => skill.category === category);
 }
 
-// Get skill cards
-const cards = document.querySelectorAll('.card');
 
 // Set up category buttons
 document.getElementById('all').addEventListener('click', () => filterCards('All'));
@@ -17,20 +15,10 @@ document.getElementById('career').addEventListener('click', () => filterCards('C
 
 // Show and hide cards based on category
 function filterCards(category) {
+  const cards = document.querySelectorAll('.card'); // get the cards dynamically
   cards.forEach(card => {
-    const skillTitle = card.querySelector('h4').textContent;
-    let skillCategory = '';
-    
-    // Match HTML cards to their categories exactly
-    if (skillTitle === 'Football' || skillTitle === 'Gaming') skillCategory = 'Programming';
-    else if (skillTitle === 'Cooking advice') skillCategory = 'Career';
-    
-    // Show if matches or category is All
-    if (category === 'All' || category === skillCategory) {
-      card.style.display = 'block';
-    } else {
-      card.style.display = 'none';
-    }
+    const skillCategory = card.dataset.category; // read category from data attribute
+    card.style.display = (category === 'All' || skillCategory === category) ? 'block' : 'none';
   });
 }
 
@@ -55,13 +43,20 @@ const maxPriceInput = document.getElementById('max-price');
 const findMatchButton = document.getElementById('find-match');
 const matchResultsDiv = document.getElementById('match-results');
 
-// Skills list for matching
-const skillsList = [
-    { title: 'Python Tutoring', category: 'Programming', price: 20 },
-    { title: 'JavaScript Help', category: 'Programming', price: 25 },
-    { title: 'Guitar Lessons', category: 'Music', price: 15 },
-    { title: 'Resume Review', category: 'Career', price: 0 }
-];
+// Skills list for matching(using API call)
+let skillsList = [];
+
+async function loadSkills() {
+  try {
+    skillsList = await window.apiService.fetchSkills();
+    console.log("Skills loaded:", skillsList);
+  } catch (error) {
+    console.error("Failed to load skills:", error);
+  }
+}
+
+// Call the function to load skills when the page loads
+loadSkills();
 
 findMatchButton.addEventListener('click', () => {
     const userNeeds = {
@@ -69,25 +64,52 @@ findMatchButton.addEventListener('click', () => {
         maxPrice: parseFloat(maxPriceInput.value) || 0
     };
 
-    const matches = matchSkillsToUser(userNeeds, skillsList);
+    const matches = matchSkillsToUser(userNeeds, skillsList); 
 
-    // Clear previous results
+    //Clear previous results
     matchResultsDiv.innerHTML = '';
 
     if (matches.length === 0) {
-        matchResultsDiv.textContent = 'No matching skills found.';
-        return;
+      matchResultsDiv.textContent = 'No matching skills found.';
+      return;
     }
 
-    // Display each match as a card
+    //show each match as a card
     matches.forEach(skill => {
-        const skillDiv = document.createElement('div');
-        skillDiv.classList.add('card');
-        skillDiv.innerHTML = `
-            <h4>${skill.title}</h4>
-            <p>Category: ${skill.category}</p>
-            <p>Price: $${skill.price}</p>
-        `;
+      const skillDiv = document.createElement('div');
+      skillDiv.classList.add('card');
+      skillDiv.innerHTML = `
+          <h4>${skill.title}</h4>
+          <p>Category: ${skill.category}</p>
+          <p>Price: $${skill.price}</p>`;
         matchResultsDiv.appendChild(skillDiv);
     });
+});
+
+  //Add skill creation form
+  const addSkillForm = document.getElementById('add-skill-form');
+  const skillTitleInput = document.getElementById('skill-title');
+  const skillCategoryInput = document.getElementById('skill-category');
+  const skillPriceInput = document.getElementById('skill-price');
+  const skillDescriptionInput = document.getElementById('skill-description');
+
+  addSkillForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // prevent page reload
+
+    const newSkill = {
+      title: skillTitleInput.value,
+      category: skillCategoryInput.value,
+      price: parseFloat(skillPriceInput.value) || 0,
+      description: skillDescriptionInput.value
+    };
+
+    try {
+        await window.apiService.createSkill(newSkill);
+        await loadSkills(); // reload skills
+        addSkillForm.reset();
+        alert('Skill added successfully!');
+    } catch (error) {
+        console.error('Failed to add skill:', error);
+        alert('Error adding skill. Check console.');
+    }
 });
