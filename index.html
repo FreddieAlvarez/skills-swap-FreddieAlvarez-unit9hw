@@ -89,6 +89,16 @@
 
             <div id="match-results"></div>
         </div>
+
+        <!--Add new skills to database-->
+        <h3>Add a New Skill</h3>
+        <form id="add-skill-form">
+            <input type="text" id="skill-title" placeholder="Skill Title" required />
+            <input type="text" id="skill-category" placeholder="Category" required />
+            <input type="number" id="skill-price" placeholder="Price" min="0" step="0.01" required />
+            <textarea id="skill-description" placeholder="Description"></textarea>
+            <button type="submit">Add Skill</button>
+        </form>
     </main>
 
     <footer>
